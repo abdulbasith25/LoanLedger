@@ -18,7 +18,4 @@ public class Installment {
     @Enumerated(EnumType.STRING)
     private InstallmentStatus status;
 
-    public enum InstallmentStatus {
-        PENDING, PAID
-    }
 }

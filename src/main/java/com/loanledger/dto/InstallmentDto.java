@@ -1,6 +1,6 @@
 package com.loanledger.dto;
 
-import com.loanledger.entity.Installment.InstallmentStatus;
+import com.loanledger.entity.InstallmentStatus;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;

@@ -2,6 +2,7 @@ package com.loanledger.service;
 
 import com.loanledger.dto.InstallmentDto;
 import com.loanledger.entity.Installment;
+import com.loanledger.entity.InstallmentStatus;
 import com.loanledger.entity.Loan;
 import com.loanledger.repository.InstallmentRepository;
 import com.loanledger.repository.LoanRepository;
@@ -32,7 +33,7 @@ public class InstallmentService {
             inst.setLoanId(loan.getId());
             inst.setDueDate(baseDate.plusMonths(i));
             inst.setAmount(installmentAmount);
-            inst.setStatus(Installment.InstallmentStatus.PENDING);
+            inst.setStatus(InstallmentStatus.PENDING);
             installments.add(inst);
         }
         installmentRepository.saveAll(installments);
@@ -43,7 +44,7 @@ public class InstallmentService {
         Installment installment = installmentRepository.findByIdWithLock(installmentId)
                 .orElseThrow(() -> new RuntimeException("Installment not found"));
 
-        if (installment.getStatus() == Installment.InstallmentStatus.PAID) {
+        if (installment.getStatus() == InstallmentStatus.PAID) {
             throw new RuntimeException("Installment already paid");
         }
 
@@ -58,7 +59,7 @@ public class InstallmentService {
         
         walletService.debit(loan.getUserId(), finalAmount, "INST-" + installmentId);
 
-        installment.setStatus(Installment.InstallmentStatus.PAID);
+        installment.setStatus(InstallmentStatus.PAID);
         installmentRepository.save(installment);
 
         loan.setRemainingAmount(loan.getRemainingAmount().subtract(installment.getAmount()));

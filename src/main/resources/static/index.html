@@ -3,268 +3,360 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loan Installment Management System</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; line-height: 1.6; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        h1, h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-top: 30px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .section { background: #fafafa; padding: 20px; border-radius: 8px; border: 1px solid #ddd; }
-        form { margin-bottom: 10px; }
-        label { display: block; margin: 10px 0 5px; font-weight: bold; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { background-color: #3498db; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s; font-size: 16px; }
-        button:hover { background-color: #2980b9; }
-        button.secondary { background-color: #2ecc71; margin-top: 5px; }
-        button.secondary:hover { background-color: #27ae60; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
-        th { background-color: #f8f9fa; color: #555; }
-        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        .PENDING { background: #ffeaa7; color: #d35400; }
-        .PAID, .APPROVED, .DISBURSED { background: #55efc4; color: #00b894; }
-        .CLOSED { background: #dfe6e9; color: #636e72; }
-        #message { position: fixed; top: 20px; right: 20px; padding: 15px; border-radius: 5px; color: #fff; display: none; z-index: 1000; }
-    </style>
+    <title>LoanLedger | Dashboards</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
 </head>
-<body>
-<div id="message"></div>
-<div class="container">
-    <h1>Ledger-Based Loan Management</h1>
-
-    <div class="grid">
-        <!-- User management -->
-        <div class="section">
-            <h2>1. User & Wallet</h2>
-            <form id="userForm">
-                <label>Create New User (Name):</label>
-                <input type="text" id="userName" placeholder="Enter name" required>
-                <button type="submit">Create User</button>
-            </form>
-            <hr>
-            <form id="depositForm">
-                <label>User ID:</label>
-                <input type="number" id="walletUserId" required>
-                <label>Deposit Amount:</label>
-                <input type="number" id="depositAmount" step="0.01" required>
-                <button type="submit" class="secondary">Deposit Money</button>
-            </form>
-            <p>Wallet Balance: <span id="balanceSpan">0</span></p>
-            <button onclick="checkBalance()">Check Balance</button>
+<body id="app-body">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">LoanLedger.</div>
+        <nav>
+            <a class="nav-link active" onclick="switchView('dashboard')">
+                <svg class="icon"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                Overview
+            </a>
+            <a class="nav-link" onclick="switchView('users')">
+                <svg class="icon"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                Users & Wallet
+            </a>
+            <a class="nav-link" onclick="switchView('products')">
+                <svg class="icon"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Loan Products
+            </a>
+            <a class="nav-link" onclick="switchView('loans')">
+                <svg class="icon"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Loan Registry
+            </a>
+            <a class="nav-link" onclick="switchView('ledger')">
+                <svg class="icon"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2z"></path></svg>
+                Audit Ledger
+            </a>
+        </nav>
+        
+        <div style="margin-top: auto; padding: 24px;">
+            <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; font-size: 0.75rem;">
+                <span style="color: var(--text-sidebar);">Status:</span> Connected To Neon
+            </div>
         </div>
+    </aside>
 
-        <!-- Loan Products -->
-        <div class="section">
-            <h2>2. Loan Products (Admin)</h2>
-            <form id="productForm">
-                <label>Title:</label>
-                <input type="text" id="prodTitle" required>
-                <label>Total Amount:</label>
-                <input type="number" id="prodAmount" step="0.01" required>
-                <label>Interest Rate (%):</label>
-                <input type="number" id="prodRate" step="0.01" required>
-                <label>Tenure (Months):</label>
-                <input type="number" id="prodTenure" required>
-                <button type="submit">Create Product</button>
-            </form>
-            <button onclick="loadProducts()">List All Products</button>
-            <div id="productList"></div>
-        </div>
-    </div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div id="message"></div>
 
-    <div class="grid">
-        <!-- Loans -->
-        <div class="section">
-            <h2>3. Apply & Manage Loans</h2>
-            <form id="applyLoanForm">
-                <label>User ID:</label>
-                <input type="number" id="applyUserId" required>
-                <label>Product ID:</label>
-                <input type="number" id="applyProductId" required>
-                <button type="submit">Apply for Loan</button>
-            </form>
-            <hr>
-            <label>Loan ID (to Approve/Disburse/View):</label>
-            <input type="number" id="targetLoanId">
-            <button onclick="approveLoan()">Approve</button>
-            <button onclick="disburseLoan()" class="secondary">Disburse</button>
-            <button onclick="viewLoan()">View Detail</button>
-            <div id="loanDetail"></div>
-        </div>
-
-        <!-- Ledger & Installments -->
-        <div class="section">
-            <h2>4. Ledger & Payments</h2>
-            <label>User ID (to View Ledger):</label>
-            <input type="number" id="viewLedgerUserId">
-            <button onclick="viewLedger()">View Ledger</button>
+        <!-- 1. DASHBOARD OVERVIEW -->
+        <section id="view-dashboard" class="view-section active">
+            <header>
+                <h1>System Overview</h1>
+                <p>Real-time financial analytics</p>
+            </header>
+            <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="card">
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Total Liquidity</span>
+                    <div class="balance" style="font-size: 2rem;">$124,500</div>
+                </div>
+                <div class="card">
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Active Loans</span>
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">12</div>
+                </div>
+                <div class="card">
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Pending Approvals</span>
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--warning);">3</div>
+                </div>
+            </div>
             
-            <hr>
-            <label>Loan ID (to View Installments):</label>
-            <input type="number" id="viewInstLoanId">
-            <button onclick="viewInstallments()">View Installments</button>
-            <div id="installmentList"></div>
-        </div>
-    </div>
+            <div class="card" style="margin-top: 24px;">
+                <h2>Recent Transactions</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>User</th><th>Type</th><th>Amount</th><th>Status</th></tr>
+                        </thead>
+                        <tbody id="recentLedger">
+                            <tr><td>#1 John</td><td>DEPOSIT</td><td style="color: var(--secondary);">+$500</td><td><span class="badge badge-paid">Success</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-    <h2>Ledger Entries</h2>
-    <table id="ledgerTable">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Type</th>
-                <th>Amount</th>
-                <th>Reference</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody id="ledgerBody"></tbody>
-    </table>
-</div>
+        <!-- 2. USERS & WALLET -->
+        <section id="view-users" class="view-section">
+            <header>
+                <h1>User & Wallet Management</h1>
+                <p>Manage user profiles and financial balances</p>
+            </header>
+            <div class="grid">
+                <div class="card">
+                    <h2>Onboard New User</h2>
+                    <form id="userForm">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="userName" placeholder="Enter name" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Register User</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h2>Wallet Operations</h2>
+                    <div class="stats">
+                        <div>
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Current Balance</span>
+                            <div class="balance">$<span id="balanceSpan">0.00</span></div>
+                        </div>
+                        <button class="btn btn-outline" style="width: auto;" onclick="checkBalance()">Refresh</button>
+                    </div>
+                    <form id="depositForm">
+                        <div class="form-group"><label>Target User ID</label><input type="number" id="walletUserId" required></div>
+                        <div class="form-group"><label>Deposit Amount</label><input type="number" id="depositAmount" step="0.01" required></div>
+                        <button type="submit" class="btn btn-secondary">Deposit Funds</button>
+                    </form>
+                </div>
+            </div>
+        </section>
 
-<script>
-    const API_BASE = "http://localhost:8080";
+        <!-- 3. LOAN PRODUCTS -->
+        <section id="view-products" class="view-section">
+            <header>
+                <h1>Product Catalog</h1>
+                <p>Define and manage loan terms and products</p>
+            </header>
+            <div class="grid" style="grid-template-columns: 350px 1fr;">
+                <div class="card">
+                    <h2>New Product</h2>
+                    <form id="productForm">
+                        <div class="form-group"><label>Title</label><input type="text" id="prodTitle" required></div>
+                        <div class="form-group"><label>Principal Amount</label><input type="number" id="prodAmount" required></div>
+                        <div class="form-group"><label>Interest Rate (%)</label><input type="number" id="prodRate" step="0.1" required></div>
+                        <div class="form-group"><label>Tenure (Months)</label><input type="number" id="prodTenure" required></div>
+                        <button type="submit" class="btn btn-primary">Deploy Product</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h2>Active Portfolio</h2>
+                    <div id="productList" class="grid" style="grid-template-columns: repeat(2, 1fr); gap: 12px;"></div>
+                </div>
+            </div>
+        </section>
 
-    function showMsg(text, isError = false) {
-        const msg = document.getElementById('message');
-        msg.innerText = text;
-        msg.style.backgroundColor = isError ? '#e74c3c' : '#2ecc71';
-        msg.style.display = 'block';
-        setTimeout(() => msg.style.display = 'none', 3000);
-    }
+        <!-- 4. LOAN REGISTRY -->
+        <section id="view-loans" class="view-section">
+            <header>
+                <h1>Loan Registry</h1>
+                <p>Process applications, approvals, and disbursements</p>
+            </header>
+            <div class="grid">
+                <div class="card">
+                    <h2>Apply for Loan</h2>
+                    <form id="applyLoanForm">
+                        <div class="form-group"><label>Applicant User ID</label><input type="number" id="applyUserId" required></div>
+                        <div class="form-group"><label>Product Catalog ID</label><input type="number" id="applyProductId" required></div>
+                        <button type="submit" class="btn btn-secondary">Submit Application</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h2>Loan Administrative Actions</h2>
+                    <div class="form-group"><label>Operational Loan ID</label><input type="number" id="targetLoanId"></div>
+                    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button class="btn btn-primary" onclick="approveLoan()">Approve</button>
+                        <button class="btn btn-secondary" onclick="disburseLoan()">Disburse</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 24px;">
+                <h2>Installment Schedule</h2>
+                <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+                    <input type="number" id="viewInstLoanId" placeholder="Enter Loan ID">
+                    <button class="btn btn-outline" style="width: auto;" onclick="viewInstallments()">Load Schedule</button>
+                </div>
+                <div id="installmentList"></div>
+            </div>
+        </section>
 
-    // 1. User & Wallet
-    document.getElementById('userForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const response = await fetch(`${API_BASE}/wallet/users`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: document.getElementById('userName').value})
+        <!-- 5. AUDIT LEDGER -->
+        <section id="view-ledger" class="view-section">
+            <header>
+                <h1>Financial Audit Ledger</h1>
+                <p>Complete immutable transaction history</p>
+            </header>
+            <div class="card">
+                <div style="display: flex; gap: 12px; margin-bottom: 24px; align-items: flex-end;">
+                    <div class="form-group" style="margin: 0; flex: 1;"><label>Audit User ID</label><input type="number" id="viewLedgerUserId"></div>
+                    <button class="btn btn-primary" style="width: auto;" onclick="viewLedger()">Generate Report</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead><tr><th>TX ID</th><th>Type</th><th>Amount</th><th>Timestamp</th></tr></thead>
+                        <tbody id="ledgerBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // --- DASHBOARD NAVIGATION ---
+        function switchView(viewName) {
+            // Update Sidebar UI
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('onclick').includes(viewName)) link.classList.add('active');
+            });
+            // Switch Sections
+            document.querySelectorAll('.view-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            
+            // Auto-load data for certain views
+            if (viewName === 'products') loadProducts();
+        }
+
+        function showMsg(text, isError = false) {
+            const msg = document.getElementById('message');
+            msg.innerText = text;
+            msg.style.backgroundColor = isError ? 'var(--danger)' : 'var(--secondary)';
+            msg.classList.add('show');
+            msg.style.display = 'block';
+            setTimeout(() => {
+                msg.classList.remove('show');
+                setTimeout(() => msg.style.display = 'none', 300);
+            }, 4000);
+        }
+
+        // --- CORE LOGIC (RETAINED FROM PREVIOUS VERSION) ---
+        // 1. User & Wallet
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const response = await fetch(`${API_BASE}/wallet/users`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: document.getElementById('userName').value})
+            });
+            const data = await response.json();
+            showMsg(`User ${data.name} onlined! ID: ${data.id}`);
         });
-        const data = await response.json();
-        showMsg(`User created! ID: ${data.id}`);
-    });
 
-    document.getElementById('depositForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const response = await fetch(`${API_BASE}/wallet/deposit`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                userId: document.getElementById('walletUserId').value,
-                amount: document.getElementById('depositAmount').value
-            })
+        document.getElementById('depositForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const response = await fetch(`${API_BASE}/wallet/deposit`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    userId: document.getElementById('walletUserId').value,
+                    amount: document.getElementById('depositAmount').value
+                })
+            });
+            showMsg(await response.text());
+            checkBalance();
         });
-        showMsg(await response.text());
-        checkBalance();
-    });
 
-    async function checkBalance() {
-        const userId = document.getElementById('walletUserId').value;
-        if(!userId) return;
-        const response = await fetch(`${API_BASE}/wallet/${userId}/balance`);
-        const bal = await response.text();
-        document.getElementById('balanceSpan').innerText = bal;
-    }
+        async function checkBalance() {
+            const userId = document.getElementById('walletUserId').value || document.getElementById('applyUserId').value;
+            if(!userId) return showMsg("User ID missing", true);
+            const response = await fetch(`${API_BASE}/wallet/${userId}/balance`);
+            const bal = await response.text();
+            document.getElementById('balanceSpan').innerText = parseFloat(bal).toLocaleString(undefined, { minimumFractionDigits: 2 });
+        }
 
-    // 2. Products
-    document.getElementById('productForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const response = await fetch(`${API_BASE}/loan-products`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                title: document.getElementById('prodTitle').value,
-                totalAmount: document.getElementById('prodAmount').value,
-                interestRate: document.getElementById('prodRate').value,
-                tenureMonths: document.getElementById('prodTenure').value
-            })
+        // 2. Products
+        document.getElementById('productForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const response = await fetch(`${API_BASE}/loan-products`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    title: document.getElementById('prodTitle').value,
+                    totalAmount: document.getElementById('prodAmount').value,
+                    interestRate: document.getElementById('prodRate').value,
+                    tenureMonths: document.getElementById('prodTenure').value
+                })
+            });
+            showMsg("Product defined successfully");
+            loadProducts();
         });
-        showMsg("Product created!");
-    });
 
-    async function loadProducts() {
-        const response = await fetch(`${API_BASE}/loan-products`);
-        const data = await response.json();
-        document.getElementById('productList').innerHTML = data.map(p => 
-            `<p><b>[${p.id}] ${p.title}</b>: $${p.totalAmount} / ${p.tenureMonths} Mo</p>`
-        ).join('');
-    }
+        async function loadProducts() {
+            const response = await fetch(`${API_BASE}/loan-products`);
+            const data = await response.json();
+            document.getElementById('productList').innerHTML = data.map(p => 
+                `<div class="card" style="padding: 12px; font-size: 0.875rem;">
+                    <div style="font-weight: 700; color: var(--primary);">#${p.id} ${p.title}</div>
+                    <div style="margin-top: 4px; font-size: 1.1rem; font-weight: 600;">$${p.totalAmount}</div>
+                    <div style="color: var(--text-muted); font-size: 0.75rem;">${p.interestRate}% Interest | ${p.tenureMonths} Mo</div>
+                </div>`
+            ).join('');
+        }
 
-    // 3. Loans
-    document.getElementById('applyLoanForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const response = await fetch(`${API_BASE}/loans/apply`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                userId: document.getElementById('applyUserId').value,
-                loanProductId: document.getElementById('applyProductId').value
-            })
+        // 3. Loans
+        document.getElementById('applyLoanForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const response = await fetch(`${API_BASE}/loans/apply`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    userId: document.getElementById('applyUserId').value,
+                    loanProductId: document.getElementById('applyProductId').value
+                })
+            });
+            const data = await response.json();
+            showMsg(`Applied! Loan ID: ${data.id}`);
+            document.getElementById('targetLoanId').value = data.id;
         });
-        const data = await response.json();
-        showMsg(`Applied! Loan ID: ${data.id}`);
-    });
 
-    async function approveLoan() {
-        const id = document.getElementById('targetLoanId').value;
-        const response = await fetch(`${API_BASE}/loans/${id}/approve`, {method: 'POST'});
-        showMsg(await response.text());
-    }
+        async function approveLoan() {
+            const id = document.getElementById('targetLoanId').value;
+            const response = await fetch(`${API_BASE}/loans/${id}/approve`, {method: 'POST'});
+            showMsg(await response.text());
+        }
 
-    async function disburseLoan() {
-        const id = document.getElementById('targetLoanId').value;
-        const response = await fetch(`${API_BASE}/loans/${id}/disburse`, {method: 'POST'});
-        showMsg(await response.text());
-    }
+        async function disburseLoan() {
+            const id = document.getElementById('targetLoanId').value;
+            const response = await fetch(`${API_BASE}/loans/${id}/disburse`, {method: 'POST'});
+            showMsg(await response.text());
+        }
 
-    async function viewLoan() {
-        const id = document.getElementById('targetLoanId').value;
-        const response = await fetch(`${API_BASE}/loans/${id}`);
-        const data = await response.json();
-        document.getElementById('loanDetail').innerHTML = `<p>Status: <span class="status-badge ${data.status}">${data.status}</span>, Remaining: $${data.remainingAmount}</p>`;
-    }
+        // 4. Ledger & Installments
+        async function viewLedger() {
+            const userId = document.getElementById('viewLedgerUserId').value;
+            const response = await fetch(`${API_BASE}/ledger/${userId}`);
+            const data = await response.json();
+            document.getElementById('ledgerBody').innerHTML = data.map(e => 
+                `<tr><td>${e.id}</td><td style="font-weight:600;">${e.type}</td><td style="color:var(--secondary); font-weight:600;">$${e.amount}</td><td>${new Date(e.createdAt).toLocaleString()}</td></tr>`
+            ).join('');
+        }
 
-    // 4. Ledger & Installments
-    async function viewLedger() {
-        const userId = document.getElementById('viewLedgerUserId').value;
-        const response = await fetch(`${API_BASE}/ledger/${userId}`);
-        const data = await response.json();
-        const body = document.getElementById('ledgerBody');
-        body.innerHTML = data.map(e => 
-            `<tr><td>${e.id}</td><td>${e.type}</td><td>${e.amount}</td><td>${e.referenceId}</td><td>${e.createdAt}</td></tr>`
-        ).join('');
-    }
+        async function viewInstallments() {
+            const loanId = document.getElementById('viewInstLoanId').value;
+            const response = await fetch(`${API_BASE}/installments/loan/${loanId}`);
+            const data = await response.json();
+            document.getElementById('installmentList').innerHTML = data.map(i => 
+                `<div style="display:flex; justify-content: space-between; align-items:center; padding: 12px; border-bottom:1px solid var(--border);">
+                    <div><b>Due: ${new Date(i.dueDate).toLocaleDateString()}</b><br><small>$${i.amount}</small></div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="badge badge-${i.status.toLowerCase()}">${i.status}</span>
+                        ${i.status == 'PENDING' ? `<button class="btn btn-primary" style="width:auto; padding: 4px 12px;" onclick="payInstallment(${i.id})">Pay</button>` : ''}
+                    </div>
+                </div>`
+            ).join('');
+        }
 
-    async function viewInstallments() {
-        const loanId = document.getElementById('viewInstLoanId').value;
-        const response = await fetch(`${API_BASE}/installments/loan/${loanId}`);
-        const data = await response.json();
-        const div = document.getElementById('installmentList');
-        div.innerHTML = data.map(i => 
-            `<div>[${i.id}] Due: ${i.dueDate} | $${i.amount} 
-            <span class="status-badge ${i.status}">${i.status}</span>
-            ${i.status == 'PENDING' ? `<button onclick="payInstallment(${i.id})">Pay</button>` : ''}
-            </div>`
-        ).join('<br>');
-    }
-
-    async function payInstallment(id) {
-        try {
+        async function payInstallment(id) {
             const response = await fetch(`${API_BASE}/installments/pay`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({installmentId: id})
             });
             const msg = await response.text();
-            if (response.ok) showMsg(msg);
-            else showMsg(msg, true);
+            showMsg(msg, !response.ok);
             viewInstallments();
-            checkBalance();
-        } catch (e) {
-            showMsg("Payment Error", true);
         }
-    }
-</script>
+    </script>
 </body>
 </html>

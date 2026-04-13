@@ -2,6 +2,7 @@ package com.loanledger.service;
 
 import com.loanledger.dto.LoanDto;
 import com.loanledger.entity.Loan;
+import com.loanledger.exception.ResourceNotFoundException;
 import com.loanledger.entity.LoanProduct;
 import com.loanledger.repository.LoanProductRepository;
 import com.loanledger.repository.LoanRepository;
@@ -20,7 +21,7 @@ public class LoanService {
     private final InstallmentService installmentService;
 
     public LoanDto applyForLoan(Long userId, Long loanProductId) {
-        LoanProduct product = loanProductRepository.findById(loanProductId).orElseThrow();
+        LoanProduct product = loanProductRepository.findById(loanProductId).orElseThrow(() -> new ResourceNotFoundException("Loan Product not found"));
         Loan loan = new Loan();
         loan.setUserId(userId);
         loan.setLoanProductId(loanProductId);
@@ -30,23 +31,24 @@ public class LoanService {
         return mapToDto(saved);
     }
 
-    public void approveLoan(Long loanId) {
-        Loan loan = loanRepository.findById(loanId).orElseThrow();
+    public LoanDto approveLoan(Long loanId) {
+        Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
         if (loan.getStatus() != Loan.LoanStatus.PENDING) {
             throw new RuntimeException("Can only approve pending loans");
         }
         loan.setStatus(Loan.LoanStatus.APPROVED);
         loanRepository.save(loan);
+        return mapToDto(loan);
     }
 
     @Transactional
     public void disburseLoan(Long loanId) {
-        Loan loan = loanRepository.findById(loanId).orElseThrow();
+        Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
         if (loan.getStatus() != Loan.LoanStatus.APPROVED) {
             throw new RuntimeException("Loan must be APPROVED before disbursement");
         }
 
-        LoanProduct product = loanProductRepository.findById(loan.getLoanProductId()).orElseThrow();
+        LoanProduct product = loanProductRepository.findById(loan.getLoanProductId()).orElseThrow(() -> new ResourceNotFoundException("Loan Product not found"));
         
         loan.setStatus(Loan.LoanStatus.DISBURSED);
         loanRepository.save(loan);
@@ -57,7 +59,7 @@ public class LoanService {
     }
 
     public LoanDto getLoan(Long id) {
-        Loan loan = loanRepository.findById(id).orElseThrow();
+        Loan loan = loanRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
         return mapToDto(loan);
     }
     

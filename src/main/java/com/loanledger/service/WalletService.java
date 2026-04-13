@@ -15,7 +15,7 @@ public class WalletService {
     private final UserRepository userRepository;
     private final LedgerService ledgerService;
 
-    @Transactional
+    @Transactional 
     public void deposit(Long userId, BigDecimal amount, String referenceId) {
         User user = userRepository.findByIdWithLock(userId).orElseThrow();
         user.setWalletBalance(user.getWalletBalance().add(amount));
