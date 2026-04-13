@@ -19,6 +19,7 @@ public class LoanService {
     private final LoanProductRepository loanProductRepository;
     private final WalletService walletService;
     private final InstallmentService installmentService;
+    private final RiskAssessmentEngine riskAssessmentEngine;
 
     public LoanDto applyForLoan(Long userId, Long loanProductId) {
         LoanProduct product = loanProductRepository.findById(loanProductId).orElseThrow(() -> new ResourceNotFoundException("Loan Product not found"));
@@ -28,6 +29,10 @@ public class LoanService {
         loan.setRemainingAmount(product.getTotalAmount());
         loan.setStatus(Loan.LoanStatus.PENDING);
         Loan saved = loanRepository.save(loan);
+        
+        // Trigger asynchronous background credit check!
+        riskAssessmentEngine.startAsyncCreditCheck(saved.getId(), userId);
+        
         return mapToDto(saved);
     }
 
