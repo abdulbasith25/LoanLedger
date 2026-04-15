@@ -12,5 +12,6 @@ public class LedgerEntryDto {
     private LedgerType type;
     private BigDecimal amount;
     private String referenceId;
+    private String entryHash;
     private LocalDateTime createdAt;
 }

@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface LedgerRepository extends JpaRepository<LedgerEntry, Long> {
     List<LedgerEntry> findByUserId(Long userId);
+    java.util.Optional<LedgerEntry> findFirstByOrderByIdDesc();
 }

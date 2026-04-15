@@ -6,6 +6,8 @@ import com.loanledger.repository.LedgerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -15,12 +17,37 @@ public class LedgerService {
     private final LedgerRepository ledgerRepository;
 
     public void record(Long userId, LedgerEntry.LedgerType type, BigDecimal amount, String referenceId) {
+        String lastHash = ledgerRepository.findFirstByOrderByIdDesc()
+                .map(LedgerEntry::getEntryHash)
+                .orElse("0");
+
         LedgerEntry entry = new LedgerEntry();
         entry.setUserId(userId);
         entry.setType(type);
         entry.setAmount(amount);
         entry.setReferenceId(referenceId);
+        entry.setPreviousHash(lastHash);
+        
+        String dataToHash = lastHash + userId + type + amount + referenceId;
+        entry.setEntryHash(calculateHash(dataToHash));
+        
         ledgerRepository.save(entry);
+    }
+
+    private String calculateHash(String data) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Error calculating ledger hash", e);
+        }
     }
 
     public List<LedgerEntryDto> getLedger(Long userId) {
@@ -34,6 +61,7 @@ public class LedgerService {
         dto.setType(entry.getType());
         dto.setAmount(entry.getAmount());
         dto.setReferenceId(entry.getReferenceId());
+        dto.setEntryHash(entry.getEntryHash());
         dto.setCreatedAt(entry.getCreatedAt());
         return dto;
     }

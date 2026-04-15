@@ -17,6 +17,8 @@ public class LedgerEntry {
     private LedgerType type;
     private BigDecimal amount;
     private String referenceId;
+    private String entryHash;
+    private String previousHash;
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public enum LedgerType {

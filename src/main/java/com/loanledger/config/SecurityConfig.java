@@ -21,7 +21,7 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/index.html", "/wallet/**", "/loan-products/**", "/loans/**", "/ledger/**", "/installments/**").permitAll() // Opening all routes while integrating
+                .requestMatchers("/", "/login", "/register", "/css/**", "/js/**", "/index.html", "/wallet/**", "/loan-products/**", "/loans/**", "/ledger/**", "/installments/**", "/actuator/**").permitAll() 
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
