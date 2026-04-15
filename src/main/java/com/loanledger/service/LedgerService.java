@@ -4,7 +4,14 @@ import com.loanledger.dto.LedgerEntryDto;
 import com.loanledger.entity.LedgerEntry;
 import com.loanledger.repository.LedgerRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import com.loanledger.events.LedgerCreatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -13,9 +20,13 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class LedgerService {
     private final LedgerRepository ledgerRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
+    private final KafkaTemplate<String, Object> kafkaProducer;
 
+    @Transactional
     public void record(Long userId, LedgerEntry.LedgerType type, BigDecimal amount, String referenceId) {
         String lastHash = ledgerRepository.findFirstByOrderByIdDesc()
                 .map(LedgerEntry::getEntryHash)
@@ -31,8 +42,18 @@ public class LedgerService {
         String dataToHash = lastHash + userId + type + amount + referenceId;
         entry.setEntryHash(calculateHash(dataToHash));
         
-        ledgerRepository.save(entry);
+        // Save first to generate ID
+        LedgerEntry savedEntry = ledgerRepository.save(entry);
+        
+        // Publish event for Kafka downstream processing
+        applicationEventPublisher.publishEvent(new LedgerCreatedEvent(
+                savedEntry.getId(), 
+                userId, 
+                amount, 
+                type.name()
+        ));
     }
+
 
     private String calculateHash(String data) {
         try {
@@ -64,5 +85,12 @@ public class LedgerService {
         dto.setEntryHash(entry.getEntryHash());
         dto.setCreatedAt(entry.getCreatedAt());
         return dto;
+    }
+
+    @EventListener
+    @Async
+    public void ledgerEvent(LedgerCreatedEvent event){
+        log.info("🚀 Publishing ledger event to Kafka: {}", event);
+        kafkaProducer.send("ledger-topic", event);
     }
 }
