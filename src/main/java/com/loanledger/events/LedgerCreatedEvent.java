@@ -13,4 +13,5 @@ public class LedgerCreatedEvent {
     private Long userId;
     private BigDecimal amount;
     private String type;
-}
+    private String referenceId;
+}

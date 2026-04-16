@@ -25,6 +25,7 @@ public class LedgerService {
     private final LedgerRepository ledgerRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final KafkaTemplate<String, Object> kafkaProducer;
+    private final UserService userService;
 
     @Transactional
     public void record(Long userId, LedgerEntry.LedgerType type, BigDecimal amount, String referenceId) {
@@ -50,7 +51,8 @@ public class LedgerService {
                 savedEntry.getId(), 
                 userId, 
                 amount, 
-                type.name()
+                type.name(),
+                referenceId
         ));
     }
 
@@ -90,7 +92,39 @@ public class LedgerService {
     @EventListener
     @Async
     public void ledgerEvent(LedgerCreatedEvent event){
-        log.info("🚀 Publishing ledger event to Kafka: {}", event);
+        log.info("🚀 Processing Score for Ledger Event: {}", event.getLedgerId());
+        userService.incrementScore(event.getUserId(), calculateScore(event));
         kafkaProducer.send("ledger-topic", event);
     }
+
+    /**
+     * Core Credit Scoring Logic (The "Elliot" Logic)
+     * Rewards punctual repayments and liquidity, while ignoring debt dispersion.
+     */
+    private int calculateScore(LedgerCreatedEvent event) {
+        int score = 0;
+        String type = event.getType();
+        String ref = event.getReferenceId() != null ? event.getReferenceId() : "";
+
+        // 1. Repayment Reward (The most important factor)
+        if ("DEBIT".equals(type) && ref.startsWith("INST-")) {
+            score += 20; // High reward for paying back installments
+        }
+
+        // 2. Liquidity Reward (Depositing own money into wallet)
+        if ("CREDIT".equals(type) && !ref.startsWith("DISB-")) {
+            score += 5; 
+        }
+
+        // 3. High Volume Transaction Bonus
+        if (event.getAmount().doubleValue() > 1000) {
+            score += 2;
+        }
+
+        // 4. Default baseline for any activity
+        score += 1;
+
+        log.info("📊 Calculated Score Increment: {} for User: {}", score, event.getUserId());
+        return score;
+    }   
 }

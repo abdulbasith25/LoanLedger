@@ -13,4 +13,6 @@ public class User {
     private Long id;
     private String name;
     private BigDecimal walletBalance = BigDecimal.ZERO;
+    private String notificationToken;
+    private int score = 0;
 }

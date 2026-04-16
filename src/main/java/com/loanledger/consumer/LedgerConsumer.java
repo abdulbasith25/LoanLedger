@@ -1,6 +1,9 @@
 package com.loanledger.consumer;
 
 import com.loanledger.events.LedgerCreatedEvent;
+import com.loanledger.repository.UserRepository;
+import com.loanledger.service.NotificationService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -12,19 +15,27 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class LedgerConsumer {
+
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @KafkaListener(topics = "ledger-topic", groupId = "loan-ledger-group")
     public void consumeLedgerEvent(LedgerCreatedEvent event) {
         log.info("📥 [Kafka Consumer] Received Ledger Event: ID={}, User={}, Type={}, Amount={}", 
                 event.getLedgerId(), event.getUserId(), event.getType(), event.getAmount());
         
-        // Premium Business Logic Simulator:
-        // In a real system, you might:
-        // 1. Update a real-time analytics dashboard
-        // 2. Trigger an alert if amount > 10,000 (Fraud detection)
-        // 3. Send a push notification to the user
-        
+        // Fetch user to get notification token
+        userRepository.findById(event.getUserId()).ifPresent(user -> {
+            String title = "Transaction Alert: " + event.getType();
+            String body = String.format("A new %s of %s has been recorded in your ledger.", 
+                    event.getType(), event.getAmount().toString());
+            
+            log.info("🔔 Triggering FCM Notification for User ID: {}", user.getId());
+            notificationService.sendPushNotification(user.getNotificationToken(), title, body);
+        });
+
         if (event.getAmount().doubleValue() > 10000) {
             log.warn("🚨 [HIGH VALUE ALERT] Large transaction detected for User {}: {} {}", 
                     event.getUserId(), event.getAmount(), event.getType());
