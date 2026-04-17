@@ -11,7 +11,7 @@
 </head>
 <body id="app-body">
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar" style="display: none;">
         <div class="sidebar-brand">LoanLedger.</div>
         <nav>
             <a class="nav-link active" onclick="switchView('dashboard')">
@@ -37,14 +37,49 @@
         </nav>
         
         <div style="margin-top: auto; padding: 24px;">
-            <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; font-size: 0.75rem;">
+            <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; font-size: 0.75rem; margin-bottom: 12px;">
                 <span style="color: var(--text-sidebar);">Status:</span> Connected To Neon
             </div>
+            <button class="btn btn-outline" style="color: white; border-color: rgba(255,255,255,0.2);" onclick="logout()">Logout</button>
         </div>
     </aside>
 
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal-overlay">
+        <div class="auth-card">
+            <h1 style="text-align: center; margin-bottom: 8px;">LoanLedger.</h1>
+            <p style="text-align: center; color: var(--text-muted); margin-bottom: 32px;" id="authSubtitle">Please sign in to continue</p>
+            
+            <form id="loginForm">
+                <div class="form-group"><label>Username</label><input type="text" id="authUsername" required></div>
+                <div class="form-group"><label>Password</label><input type="password" id="authPassword" required></div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 16px;">Sign In</button>
+                <p style="text-align: center; margin-top: 16px; font-size: 0.875rem;">
+                    Don't have an account? <a href="#" onclick="toggleAuthMode(true)" style="color: var(--primary);">Register</a>
+                </p>
+            </form>
+
+            <form id="registerForm" style="display: none;">
+                <div class="form-group"><label>Full Name</label><input type="text" id="regName" required></div>
+                <div class="form-group"><label>Username</label><input type="text" id="regUsername" required></div>
+                <div class="form-group"><label>Password</label><input type="password" id="regPassword" required></div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="regRole">
+                        <option value="USER">Standard User</option>
+                        <option value="ADMIN">Administrator</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-secondary" style="margin-top: 16px;">Create Account</button>
+                <p style="text-align: center; margin-top: 16px; font-size: 0.875rem;">
+                    Already have an account? <a href="#" onclick="toggleAuthMode(false)" style="color: var(--primary);">Sign In</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-content" id="mainContent" style="display: none;">
         <div id="message"></div>
 
         <!-- 1. DASHBOARD OVERVIEW -->
@@ -53,32 +88,49 @@
                 <h1>System Overview</h1>
                 <p>Real-time financial analytics</p>
             </header>
-            <div class="grid" style="grid-template-columns: repeat(3, 1fr);">
-                <div class="card">
-                    <span style="font-size: 0.75rem; color: var(--text-muted);">Total Liquidity</span>
-                    <div class="balance" style="font-size: 2rem;">$124,500</div>
+            <div class="grid" style="grid-template-columns: 1fr 340px;">
+                <!-- Main Stats and Recent Table -->
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <div class="grid" style="grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                        <div class="card">
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Total Liquidity</span>
+                            <div class="balance" style="font-size: 2rem;" id="statLiquidity">$0</div>
+                        </div>
+                        <div class="card">
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Active Loans</span>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--primary);" id="statLoans">0</div>
+                        </div>
+                        <div class="card">
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">Credit Health</span>
+                            <div style="font-size: 2rem; font-weight: 800; color: var(--secondary);" id="statHealth">Checking...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h2>Recent Transactions</h2>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr><th>User</th><th>Type</th><th>Amount</th><th>Status</th></tr>
+                                </thead>
+                                <tbody id="recentLedger"></tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <div class="card">
-                    <span style="font-size: 0.75rem; color: var(--text-muted);">Active Loans</span>
-                    <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">12</div>
-                </div>
-                <div class="card">
-                    <span style="font-size: 0.75rem; color: var(--text-muted);">Pending Approvals</span>
-                    <div style="font-size: 2rem; font-weight: 800; color: var(--warning);">3</div>
-                </div>
-            </div>
-            
-            <div class="card" style="margin-top: 24px;">
-                <h2>Recent Transactions</h2>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr><th>User</th><th>Type</th><th>Amount</th><th>Status</th></tr>
-                        </thead>
-                        <tbody id="recentLedger">
-                            <tr><td>#1 John</td><td>DEPOSIT</td><td style="color: var(--secondary);">+$500</td><td><span class="badge badge-paid">Success</span></td></tr>
-                        </tbody>
-                    </table>
+
+                <!-- Live Activity Feed -->
+                <div class="card" style="display: flex; flex-direction: column;">
+                    <h2>
+                        <span style="width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: inline-block; animation: pulse 2s infinite;"></span>
+                        Live Activity
+                    </h2>
+                    <div id="activityFeed" class="activity-feed-container">
+                        <div class="activity-item system">
+                            <span class="activity-time">Just now</span>
+                            System: Connecting to real-time events...
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -157,7 +209,7 @@
                         <button type="submit" class="btn btn-secondary">Submit Application</button>
                     </form>
                 </div>
-                <div class="card">
+                <div class="card" id="adminActions">
                     <h2>Loan Administrative Actions</h2>
                     <div class="form-group"><label>Operational Loan ID</label><input type="number" id="targetLoanId"></div>
                     <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 8px;">
@@ -200,22 +252,141 @@
 
     <script>
         const API_BASE = window.location.origin;
+        let AUTH_TOKEN = localStorage.getItem('token');
+        let USER_ROLE = localStorage.getItem('role');
 
-        // --- DASHBOARD NAVIGATION ---
+        const authHeaders = () => ({
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${AUTH_TOKEN}`
+        });
+
+        // --- AUTH LOGIC ---
+        function checkAuth() {
+            if (AUTH_TOKEN) {
+                document.getElementById('authModal').style.display = 'none';
+                document.getElementById('sidebar').style.display = 'flex';
+                document.getElementById('mainContent').style.display = 'block';
+                applyPermissions();
+                loadDashboard();
+                connectSse();
+            } else {
+                document.getElementById('authModal').style.display = 'flex';
+                document.getElementById('sidebar').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'none';
+            }
+        }
+
+        function applyPermissions() {
+            const isAdmin = USER_ROLE === 'ADMIN';
+            document.querySelectorAll('.nav-link').forEach(link => {
+                const view = link.getAttribute('onclick').match(/'([^']+)'/)[1];
+                if (['products', 'ledger'].includes(view) && !isAdmin) {
+                    link.style.display = 'none';
+                }
+            });
+            const adminActions = document.getElementById('adminActions');
+            if (adminActions) adminActions.style.display = isAdmin ? 'block' : 'none';
+        }
+
+        function toggleAuthMode(isRegister) {
+            document.getElementById('loginForm').style.display = isRegister ? 'none' : 'block';
+            document.getElementById('registerForm').style.display = isRegister ? 'block' : 'none';
+            document.getElementById('authSubtitle').innerText = isRegister ? 'Join our financial ecosystem' : 'Please sign in to continue';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch(`${API_BASE}/api/auth/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    username: document.getElementById('authUsername').value,
+                    password: document.getElementById('authPassword').value
+                })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                AUTH_TOKEN = data.token;
+                USER_ROLE = data.role;
+                localStorage.setItem('token', AUTH_TOKEN);
+                localStorage.setItem('role', USER_ROLE);
+                localStorage.setItem('username', data.username);
+                checkAuth();
+            } else {
+                showMsg("Invalid credentials", true);
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch(`${API_BASE}/api/auth/register`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    name: document.getElementById('regName').value,
+                    username: document.getElementById('regUsername').value,
+                    password: document.getElementById('regPassword').value,
+                    role: document.getElementById('regRole').value
+                })
+            });
+            if (res.ok) {
+                showMsg("Registration successful! Please login.");
+                toggleAuthMode(false);
+            } else {
+                showMsg(await res.text(), true);
+            }
+        });
+
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        function connectSse() {
+            if (!AUTH_TOKEN) return;
+            const eventSource = new EventSource(`${API_BASE}/api/activity/stream`);
+            const addActivity = (type, message) => {
+                const feed = document.getElementById('activityFeed');
+                if(!feed) return;
+                const item = document.createElement('div');
+                item.className = `activity-item ${type}`;
+                item.innerHTML = `<span class="activity-time">${new Date().toLocaleTimeString()}</span>${message}`;
+                feed.prepend(item);
+                if (feed.children.length > 20) feed.removeChild(feed.lastChild);
+            };
+            eventSource.addEventListener('loan_update', (e) => addActivity('loan_update', e.data));
+            eventSource.addEventListener('transaction', (e) => addActivity('transaction', e.data));
+            eventSource.onerror = () => { eventSource.close(); setTimeout(connectSse, 5000); };
+        }
+
         function switchView(viewName) {
-            // Update Sidebar UI
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('active');
                 if (link.getAttribute('onclick').includes(viewName)) link.classList.add('active');
             });
-            // Switch Sections
-            document.querySelectorAll('.view-section').forEach(section => {
-                section.classList.remove('active');
-            });
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
             document.getElementById(`view-${viewName}`).classList.add('active');
-            
-            // Auto-load data for certain views
+            if (viewName === 'dashboard') loadDashboard();
             if (viewName === 'products') loadProducts();
+        }
+
+        async function loadDashboard() {
+            const res = await fetch(`${API_BASE}/api/dashboard/stats`, { headers: authHeaders() });
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            document.getElementById('statLiquidity').innerText = `$${data.totalLiquidity.toLocaleString()}`;
+            document.getElementById('statLoans').innerText = data.activeLoans;
+            document.getElementById('statHealth').innerText = data.creditHealthStatus;
+
+            document.getElementById('recentLedger').innerHTML = data.recentTransactions.map(t => `
+                <tr>
+                    <td>User #${t.userId}</td>
+                    <td>${t.type}</td>
+                    <td style="color: ${t.type === 'DEPOSIT' ? 'var(--secondary)' : 'var(--danger)'}">$${t.amount}</td>
+                    <td><span class="badge badge-paid">Success</span></td>
+                </tr>
+            `).join('');
         }
 
         function showMsg(text, isError = false) {
@@ -230,13 +401,12 @@
             }, 4000);
         }
 
-        // --- CORE LOGIC (RETAINED FROM PREVIOUS VERSION) ---
-        // 1. User & Wallet
+        // --- CORE LOGIC ---
         document.getElementById('userForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const response = await fetch(`${API_BASE}/wallet/users`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: authHeaders(),
                 body: JSON.stringify({name: document.getElementById('userName').value})
             });
             const data = await response.json();
@@ -247,7 +417,7 @@
             e.preventDefault();
             const response = await fetch(`${API_BASE}/wallet/deposit`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: authHeaders(),
                 body: JSON.stringify({
                     userId: document.getElementById('walletUserId').value,
                     amount: document.getElementById('depositAmount').value
@@ -260,17 +430,16 @@
         async function checkBalance() {
             const userId = document.getElementById('walletUserId').value || document.getElementById('applyUserId').value;
             if(!userId) return showMsg("User ID missing", true);
-            const response = await fetch(`${API_BASE}/wallet/${userId}/balance`);
+            const response = await fetch(`${API_BASE}/wallet/${userId}/balance`, { headers: authHeaders() });
             const bal = await response.text();
             document.getElementById('balanceSpan').innerText = parseFloat(bal).toLocaleString(undefined, { minimumFractionDigits: 2 });
         }
 
-        // 2. Products
         document.getElementById('productForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const response = await fetch(`${API_BASE}/loan-products`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: authHeaders(),
                 body: JSON.stringify({
                     title: document.getElementById('prodTitle').value,
                     totalAmount: document.getElementById('prodAmount').value,
@@ -283,7 +452,7 @@
         });
 
         async function loadProducts() {
-            const response = await fetch(`${API_BASE}/loan-products`);
+            const response = await fetch(`${API_BASE}/loan-products`, { headers: authHeaders() });
             const data = await response.json();
             document.getElementById('productList').innerHTML = data.map(p => 
                 `<div class="card" style="padding: 12px; font-size: 0.875rem;">
@@ -294,12 +463,11 @@
             ).join('');
         }
 
-        // 3. Loans
         document.getElementById('applyLoanForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const response = await fetch(`${API_BASE}/loans/apply`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: authHeaders(),
                 body: JSON.stringify({
                     userId: document.getElementById('applyUserId').value,
                     loanProductId: document.getElementById('applyProductId').value
@@ -312,20 +480,19 @@
 
         async function approveLoan() {
             const id = document.getElementById('targetLoanId').value;
-            const response = await fetch(`${API_BASE}/loans/${id}/approve`, {method: 'POST'});
+            const response = await fetch(`${API_BASE}/loans/${id}/approve`, {method: 'POST', headers: authHeaders() });
             showMsg(await response.text());
         }
 
         async function disburseLoan() {
             const id = document.getElementById('targetLoanId').value;
-            const response = await fetch(`${API_BASE}/loans/${id}/disburse`, {method: 'POST'});
+            const response = await fetch(`${API_BASE}/loans/${id}/disburse`, {method: 'POST', headers: authHeaders() });
             showMsg(await response.text());
         }
 
-        // 4. Ledger & Installments
         async function viewLedger() {
             const userId = document.getElementById('viewLedgerUserId').value;
-            const response = await fetch(`${API_BASE}/ledger/${userId}`);
+            const response = await fetch(`${API_BASE}/ledger/${userId}`, { headers: authHeaders() });
             const data = await response.json();
             document.getElementById('ledgerBody').innerHTML = data.map(e => 
                 `<tr><td>${e.id}</td><td style="font-weight:600;">${e.type}</td><td style="color:var(--secondary); font-weight:600;">$${e.amount}</td><td>${new Date(e.createdAt).toLocaleString()}</td></tr>`
@@ -334,7 +501,7 @@
 
         async function viewInstallments() {
             const loanId = document.getElementById('viewInstLoanId').value;
-            const response = await fetch(`${API_BASE}/installments/loan/${loanId}`);
+            const response = await fetch(`${API_BASE}/installments/loan/${loanId}`, { headers: authHeaders() });
             const data = await response.json();
             document.getElementById('installmentList').innerHTML = data.map(i => 
                 `<div style="display:flex; justify-content: space-between; align-items:center; padding: 12px; border-bottom:1px solid var(--border);">
@@ -350,13 +517,16 @@
         async function payInstallment(id) {
             const response = await fetch(`${API_BASE}/installments/pay`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: authHeaders(),
                 body: JSON.stringify({installmentId: id})
             });
             const msg = await response.text();
             showMsg(msg, !response.ok);
             viewInstallments();
         }
+
+        // Initialize App
+        checkAuth();
     </script>
 </body>
 </html>
