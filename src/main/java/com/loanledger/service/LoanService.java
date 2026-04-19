@@ -4,12 +4,15 @@ import com.loanledger.dto.LoanDto;
 import com.loanledger.entity.Loan;
 import com.loanledger.exception.ResourceNotFoundException;
 import com.loanledger.entity.LoanProduct;
+import com.loanledger.events.DisbursalEvent;
 import com.loanledger.repository.LoanProductRepository;
 import com.loanledger.repository.LoanRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.kafka.core.KafkaTemplate;
 import java.math.BigDecimal;
+
 import java.util.Optional;
 
 @Service
@@ -20,6 +23,7 @@ public class LoanService {
     private final WalletService walletService;
     private final InstallmentService installmentService;
     private final RiskAssessmentEngine riskAssessmentEngine;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public LoanDto applyForLoan(Long userId, Long loanProductId) {
         LoanProduct product = loanProductRepository.findById(loanProductId).orElseThrow(() -> new ResourceNotFoundException("Loan Product not found"));
@@ -53,14 +57,23 @@ public class LoanService {
             throw new RuntimeException("Loan must be APPROVED before disbursement");
         }
 
-        LoanProduct product = loanProductRepository.findById(loan.getLoanProductId()).orElseThrow(() -> new ResourceNotFoundException("Loan Product not found"));
+        LoanProduct product = loanProductRepository.findById(loan.getLoanProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Loan Product not found"));
         
-        loan.setStatus(Loan.LoanStatus.DISBURSED);
+        // 1. Update status to IN_DISBURSAL (Prevents double disbursement)
+        loan.setStatus(Loan.LoanStatus.IN_DISBURSAL);
         loanRepository.save(loan);
 
-        walletService.credit(loan.getUserId(), product.getTotalAmount(), "DISB-" + loanId);
-
-        installmentService.generateInstallments(loan, product.getTotalAmount(), product.getTenureMonths());
+        // 2. Offload the heavy work (money transfer & schedule gen) to Kafka
+        DisbursalEvent event = new DisbursalEvent(
+                loan.getId(),
+                loan.getUserId(),
+                product.getTotalAmount(),
+                product.getTenureMonths()
+        );
+        
+        kafkaTemplate.send("disbursal-topic", event);
+        // Work will be finished by DisbursalConsumer
     }
 
     public LoanDto getLoan(Long id) {

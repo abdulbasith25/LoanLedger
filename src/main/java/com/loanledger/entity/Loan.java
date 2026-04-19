@@ -18,6 +18,6 @@ public class Loan {
     private LoanStatus status;
 
     public enum LoanStatus {
-        PENDING, APPROVED, DISBURSED, CLOSED, REJECTED
+        PENDING, APPROVED, IN_DISBURSAL, DISBURSED, CLOSED, REJECTED
     }
 }
