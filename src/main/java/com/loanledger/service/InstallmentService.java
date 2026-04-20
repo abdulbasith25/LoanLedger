@@ -33,21 +33,37 @@ public class InstallmentService {
         
         BigDecimal annualRate = getScore(user.getScore());
         BigDecimal installmentAmount = calculateEmi(amount, annualRate, tenure);
+        BigDecimal remainingPrincipal = amount;
+        BigDecimal monthlyRate = annualRate.divide(BigDecimal.valueOf(12), 10, RoundingMode.HALF_UP);
 
         List<Installment> installments = new ArrayList<>();
         LocalDate baseDate = LocalDate.now();
 
         for (int i = 1; i <= tenure; i++) {
+            BigDecimal interestForMonth = remainingPrincipal.multiply(monthlyRate).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal principalForMonth = installmentAmount.subtract(interestForMonth);
+            
+            // Adjust for last month rounding
+            if (i == tenure) {
+                principalForMonth = remainingPrincipal;
+                installmentAmount = principalForMonth.add(interestForMonth);
+            }
+
             Installment inst = new Installment();
             inst.setLoanId(loan.getId());
             inst.setDueDate(baseDate.plusMonths(i));
             inst.setAmount(installmentAmount);
+            inst.setPrincipalPortion(principalForMonth);
+            inst.setInterestPortion(interestForMonth);
             inst.setStatus(InstallmentStatus.PENDING);
             installments.add(inst);
+
+            remainingPrincipal = remainingPrincipal.subtract(principalForMonth);
         }
         installmentRepository.saveAll(installments);
         
         // Update loan remaining amount to include the calculated interest
+        loan.setPrincipalAmount(amount);
         loan.setRemainingAmount(installmentAmount.multiply(BigDecimal.valueOf(tenure)));
         loanRepository.save(loan);
     }
@@ -115,10 +131,22 @@ public class InstallmentService {
         installmentRepository.save(installment);
 
         loan.setRemainingAmount(loan.getRemainingAmount().subtract(installment.getAmount()));
+        loan.setPrincipalAmount(loan.getPrincipalAmount().subtract(installment.getPrincipalPortion()));
+        
         if (loan.getRemainingAmount().compareTo(BigDecimal.ZERO) <= 0) {
             loan.setStatus(Loan.LoanStatus.CLOSED);
+            loan.setPrincipalAmount(BigDecimal.ZERO);
         }
         loanRepository.save(loan);
+    }
+
+    @Transactional
+    public void cancelPendingInstallments(Long loanId) {
+        List<Installment> pending = installmentRepository.findByLoanId(loanId).stream()
+                .filter(i -> i.getStatus() == InstallmentStatus.PENDING)
+                .peek(i -> i.setStatus(InstallmentStatus.CANCELLED))
+                .collect(Collectors.toList());
+        installmentRepository.saveAll(pending);
     }
 
     private BigDecimal getPenaltyRate(int score) {

@@ -34,4 +34,10 @@ public class LoanController {
     public LoanDto getLoan(@PathVariable Long id) {
         return loanService.getLoan(id);
     }
+
+    @PostMapping("/{id}/foreclose")
+    public String forecloseLoan(@PathVariable Long id) {
+        loanService.forecloseLoan(id);
+        return "Loan foreclosed successfully";
+    }
 }

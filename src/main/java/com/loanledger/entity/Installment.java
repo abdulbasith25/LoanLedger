@@ -15,6 +15,8 @@ public class Installment {
     private Long loanId;
     private LocalDate dueDate;
     private BigDecimal amount;
+    private BigDecimal principalPortion;
+    private BigDecimal interestPortion;
     @Enumerated(EnumType.STRING)
     private InstallmentStatus status;
 

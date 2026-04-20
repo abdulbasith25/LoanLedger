@@ -80,6 +80,33 @@ public class LoanService {
         Loan loan = loanRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
         return mapToDto(loan);
     }
+
+    @Transactional
+    public void forecloseLoan(Long loanId) {
+        Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
+        if (loan.getStatus() != Loan.LoanStatus.DISBURSED) {
+            throw new RuntimeException("Only active disbursed loans can be foreclosed");
+        }
+
+        // Logic: Pay only the remaining PRINCIPAL + a 2% foreclosure fee
+        BigDecimal outstandingPrincipal = loan.getPrincipalAmount();
+        BigDecimal foreclosureFee = outstandingPrincipal.multiply(new BigDecimal("0.02")).setScale(2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal totalForeclosureAmount = outstandingPrincipal.add(foreclosureFee);
+
+        // 1. Debit the wallet
+        walletService.debit(loan.getUserId(), totalForeclosureAmount, "FORECLOSE-" + loanId);
+
+        // 2. Cancel all future installments
+        installmentService.cancelPendingInstallments(loanId);
+
+        // 3. Mark loan as closed
+        loan.setStatus(Loan.LoanStatus.CLOSED);
+        loan.setRemainingAmount(BigDecimal.ZERO);
+        loan.setPrincipalAmount(BigDecimal.ZERO);
+        loanRepository.save(loan);
+        
+        kafkaTemplate.send("ledger-topic", "Loan Foreclosed: " + loanId + " | Paid: " + totalForeclosureAmount);
+    }
     
     private LoanDto mapToDto(Loan loan) {
         LoanDto dto = new LoanDto();

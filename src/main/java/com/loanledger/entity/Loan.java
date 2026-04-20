@@ -14,6 +14,7 @@ public class Loan {
     private Long userId;
     private Long loanProductId;
     private BigDecimal remainingAmount;
+    private BigDecimal principalAmount;
     @Enumerated(EnumType.STRING)
     private LoanStatus status;
 
