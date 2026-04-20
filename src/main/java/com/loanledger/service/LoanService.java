@@ -2,6 +2,7 @@ package com.loanledger.service;
 
 import com.loanledger.dto.LoanDto;
 import com.loanledger.entity.Loan;
+import com.loanledger.exception.LoanValidationException;
 import com.loanledger.exception.ResourceNotFoundException;
 import com.loanledger.entity.LoanProduct;
 import com.loanledger.events.DisbursalEvent;
@@ -43,7 +44,7 @@ public class LoanService {
     public LoanDto approveLoan(Long loanId) {
         Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
         if (loan.getStatus() != Loan.LoanStatus.PENDING) {
-            throw new RuntimeException("Can only approve pending loans");
+            throw new LoanValidationException("Can only approve pending loans");
         }
         loan.setStatus(Loan.LoanStatus.APPROVED);
         loanRepository.save(loan);
@@ -54,7 +55,7 @@ public class LoanService {
     public void disburseLoan(Long loanId) {
         Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
         if (loan.getStatus() != Loan.LoanStatus.APPROVED) {
-            throw new RuntimeException("Loan must be APPROVED before disbursement");
+            throw new LoanValidationException("Loan must be APPROVED before disbursement");
         }
 
         LoanProduct product = loanProductRepository.findById(loan.getLoanProductId())
@@ -85,7 +86,7 @@ public class LoanService {
     public void forecloseLoan(Long loanId) {
         Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
         if (loan.getStatus() != Loan.LoanStatus.DISBURSED) {
-            throw new RuntimeException("Only active disbursed loans can be foreclosed");
+            throw new LoanValidationException("Only active disbursed loans can be foreclosed");
         }
 
         // Logic: Pay only the remaining PRINCIPAL + a 2% foreclosure fee
@@ -104,8 +105,6 @@ public class LoanService {
         loan.setRemainingAmount(BigDecimal.ZERO);
         loan.setPrincipalAmount(BigDecimal.ZERO);
         loanRepository.save(loan);
-        
-        kafkaTemplate.send("ledger-topic", "Loan Foreclosed: " + loanId + " | Paid: " + totalForeclosureAmount);
     }
     
     private LoanDto mapToDto(Loan loan) {
