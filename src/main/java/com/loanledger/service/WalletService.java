@@ -1,5 +1,6 @@
 package com.loanledger.service;
 
+import com.loanledger.aspect.Audit;
 import com.loanledger.dto.UserDto;
 import com.loanledger.entity.LedgerEntry;
 import com.loanledger.entity.User;
@@ -24,6 +25,7 @@ public class WalletService {
     }
 
     @Transactional
+    @Audit(action = "WALLET_CREDIT")
     public void credit(Long userId, BigDecimal amount, String referenceId) {
         User user = userRepository.findByIdWithLock(userId).orElseThrow();
         user.setWalletBalance(user.getWalletBalance().add(amount));
@@ -32,6 +34,7 @@ public class WalletService {
     }
 
     @Transactional
+    @Audit(action = "WALLET_DEBIT")
     public void debit(Long userId, BigDecimal amount, String referenceId) {
         User user = userRepository.findByIdWithLock(userId).orElseThrow();
         if (user.getWalletBalance().compareTo(amount) < 0) {

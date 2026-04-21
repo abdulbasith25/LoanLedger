@@ -1,5 +1,6 @@
 package com.loanledger.service;
 
+import com.loanledger.aspect.Audit;
 import com.loanledger.dto.LoanDto;
 import com.loanledger.entity.Loan;
 import com.loanledger.exception.LoanValidationException;
@@ -26,6 +27,7 @@ public class LoanService {
     private final RiskAssessmentEngine riskAssessmentEngine;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
+    @Audit(action = "LOAN_APPLICATION_SUBMITTED")
     public LoanDto applyForLoan(Long userId, Long loanProductId) {
         LoanProduct product = loanProductRepository.findById(loanProductId).orElseThrow(() -> new ResourceNotFoundException("Loan Product not found"));
         Loan loan = new Loan();
@@ -41,6 +43,7 @@ public class LoanService {
         return mapToDto(saved);
     }
 
+    @Audit(action = "LOAN_APPROVED")
     public LoanDto approveLoan(Long loanId) {
         Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
         if (loan.getStatus() != Loan.LoanStatus.PENDING) {
@@ -52,6 +55,7 @@ public class LoanService {
     }
 
     @Transactional
+    @Audit(action = "LOAN_DISBURSED")
     public void disburseLoan(Long loanId) {
         Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
         if (loan.getStatus() != Loan.LoanStatus.APPROVED) {
@@ -83,6 +87,7 @@ public class LoanService {
     }
 
     @Transactional
+    @Audit(action = "LOAN_FORECLOSED")
     public void forecloseLoan(Long loanId) {
         Loan loan = loanRepository.findById(loanId).orElseThrow(() -> new ResourceNotFoundException("Loan not found"));
         if (loan.getStatus() != Loan.LoanStatus.DISBURSED) {
