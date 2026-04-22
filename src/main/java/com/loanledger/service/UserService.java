@@ -21,4 +21,10 @@ public class UserService {
         user.setScore(newScore);
         userRepository.save(user);
     }
+
+    public Long getUserIdFromUsername(String username) {
+        return userRepository.findByUsername(username)
+                .map(User::getId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 }
