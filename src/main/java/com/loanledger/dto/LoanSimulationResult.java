@@ -14,5 +14,7 @@ public class LoanSimulationResult {
     private BigDecimal monthlyEMI;
     private BigDecimal totalInterestPayable;
     private BigDecimal totalAmountPayable;
+    private String recommendation;
+    private BigDecimal potentialSavingsNextTier;
     private List<SimulatedInstallmentDto> schedule;
 }
