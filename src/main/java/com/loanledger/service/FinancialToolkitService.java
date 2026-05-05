@@ -1,6 +1,7 @@
 package com.loanledger.service;
 
 import com.loanledger.dto.LoanSimulationResult;
+import com.loanledger.repository.UserRepository;
 import com.loanledger.dto.SimulatedInstallmentDto;
 import com.loanledger.entity.User;
 import com.loanledger.exception.ResourceNotFoundException;
@@ -26,10 +27,8 @@ public class FinancialToolkitService {
         if (tenure <= 0) {
             throw new IllegalArgumentException("Tenure must be at least 1 month");
         }
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
-        
         BigDecimal annualRate = getRateByScore(user.getScore());
         LoanSimulationResult result = calculateSimulation(amount, annualRate, tenure);
         result.setRecommendation(getRecommendation(user.getScore()));

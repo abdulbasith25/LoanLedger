@@ -36,6 +36,10 @@ public class RiskAssessmentEngine {
             new ArrayBlockingQueue<>(50),
             new ThreadPoolExecutor.CallerRunsPolicy() // If we hit Max Threads AND Queue is full, the calling HTTP thread processes it
     );
+
+
+
+
     public void startAsyncCreditCheck(Long loanId, Long userId) {
         log.info("Dispatching asynchronous risk assessment for Loan ID: {} on thread {}", loanId, Thread.currentThread().getName());
 
