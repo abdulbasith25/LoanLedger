@@ -23,4 +23,16 @@ public class CacheConfig {
         );
         return manager;
     }
+
+    // @Bean
+    // public CacheManager loanCachemanager(){
+    //     CaffineCachemanager manager = new CaffineCachemanager("loanDetails");
+    //     manager.setCaffine(
+    //         Caffeine.newBuilder()
+    //         .initialCapacity(50)
+    //         .maximumSize(500)
+    //         .expireAfterWrite(10, TimeUnit.MINUTES)
+    //     );
+    //     return manager;
+    // }
 }

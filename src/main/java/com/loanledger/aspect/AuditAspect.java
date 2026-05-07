@@ -27,10 +27,10 @@ public class AuditAspect {
 
     private final AuditLogRepository auditLogRepository;
 
-    @Around("@annotation(audit)")
-    public Object auditMethod(ProceedingJoinPoint joinPoint, Audit audit) throws Throwable {
+    @Around("@annotation(auditing)")
+    public Object auditMethod(ProceedingJoinPoint joinPoint, Auditing auditing) throws Throwable {
         String methodName = joinPoint.getSignature().getName();
-        String action = audit.action().isEmpty() ? methodName : audit.action();
+        String action = auditing.action().isEmpty() ? methodName : auditing.action();
         String details = "Arguments: " + Arrays.toString(joinPoint.getArgs());
         String userId = getCurrentUserId();
         String clientIp = getClientIp();

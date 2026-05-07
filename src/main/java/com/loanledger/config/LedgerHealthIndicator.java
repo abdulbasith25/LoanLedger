@@ -16,13 +16,15 @@ public class LedgerHealthIndicator implements HealthIndicator {
         boolean isLedgerValid = ledgerIntegrityService.validateChain();
         
         if (isLedgerValid) {
-            return Health.up()
+            health =  Health.up()
                     .withDetail("message", "Ledger cryptographic chain is intact")
                     .build();
+                    return health;
         } else {
-            return Health.down()
+            health =  Health.down()
                     .withDetail("error", "Ledger tampering detected! Cryptographic chain is broken.")
                     .build();
+                    return health;
         }
     }
 }

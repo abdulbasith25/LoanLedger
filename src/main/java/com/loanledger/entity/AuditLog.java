@@ -25,4 +25,5 @@ public class AuditLog {
     private String error; // Error message if any
     private LocalDateTime timestamp;
     private String clientIp;
+    private Long executionTime;
 }
