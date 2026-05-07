@@ -37,16 +37,18 @@ public class AuditAspect {
 
         Object result;
         try {
+            long start = System.currentTimeMillis();
             result = joinPoint.proceed();
-            saveLog(userId, action, details, "SUCCESS", null, clientIp);
+            long executionTime = System.currentTimeMillis() - start;
+            saveLog(userId, action, details, "SUCCESS", null, clientIp, executionTime);
             return result;
         } catch (Exception e) {
-            saveLog(userId, action, details, "FAILED", e.getMessage(), clientIp);
+            saveLog(userId, action, details, "FAILED", e.getMessage(), clientIp, 0);
             throw e;
         }
     }
 
-    private void saveLog(String userId, String action, String details, String status, String error, String clientIp) {
+    private void saveLog(String userId, String action, String details, String status, String error, String clientIp, long executionTime) {
         try {
             AuditLog auditLog = AuditLog.builder()
                     .userId(userId)
@@ -56,6 +58,7 @@ public class AuditAspect {
                     .error(error)
                     .timestamp(LocalDateTime.now())
                     .clientIp(clientIp)
+                    .executionTime(executionTime)
                     .build();
             auditLogRepository.save(auditLog);
         } catch (Exception e) {
