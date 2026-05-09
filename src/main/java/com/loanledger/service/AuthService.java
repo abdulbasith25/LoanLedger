@@ -3,6 +3,8 @@ package com.loanledger.service;
 import com.loanledger.dto.AuthRequest;
 import com.loanledger.dto.AuthResponse;
 import com.loanledger.entity.User;
+import com.loanledger.exception.UserAleadyExistException;
+import com.loanledger.exception.UserNotFoundExcpetion;
 import com.loanledger.repository.UserRepository;
 import com.loanledger.config.JwtUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +30,7 @@ public class AuthService {
     public AuthResponse register(User user) {
         Optional<User> existingUser = userRepository.findByUsername(user.getUsername());
         if (existingUser.isPresent()) {
-            throw new RuntimeException("User already exists");
+            throw new UserAleadyExistException("User already exists");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole(User.Role.USER);
@@ -45,7 +47,7 @@ public class AuthService {
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
         String token = jwtUtils.generateToken(userDetails);
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserAleadyExistException("User not found"));
         return new AuthResponse(token, user.getUsername(), user.getRole().name());
     }
-}
+}
