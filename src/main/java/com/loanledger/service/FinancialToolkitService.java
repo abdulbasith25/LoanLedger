@@ -80,14 +80,14 @@ public class FinancialToolkitService {
 
             totalInterest = totalInterest.add(interestForMonth);
             remainingBalance = remainingBalance.subtract(principalForMonth);
-            SimulatedInstallmentDto simulatedInstalment = new SimulatedInstallmentDto();
-            simulatedInstalment.setInstallmentNumber(i);
-            simulatedInstalment.setDueDate(baseDate.plusMonths(i));
-            simulatedInstalment.setTotalAmount(emi);
-            simulatedInstalment.setPrincipalPortion(principalForMonth);
-            simulatedInstalment.setInterestPortion(interestForMonth);
-            simulatedInstalment.setRemainingBalance(remainingBalance.max(BigDecimal.ZERO));
-            schedule.add(simulatedInstalment);
+            SimulatedInstallmentDto simulatedInstallment = new SimulatedInstallmentDto();
+            simulatedInstallment.setInstallmentNumber(i);
+            simulatedInstallment.setDueDate(baseDate.plusMonths(i));
+            simulatedInstallment.setTotalAmount(emi);
+            simulatedInstallment.setPrincipalPortion(principalForMonth);
+            simulatedInstallment.setInterestPortion(interestForMonth);
+            simulatedInstallment.setRemainingBalance(remainingBalance.max(BigDecimal.ZERO));
+            schedule.add(simulatedInstallment);
         }
 
         return LoanSimulationResult.builder()
