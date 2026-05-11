@@ -1,57 +1,54 @@
-package com.loanledger.service;
+    package com.loanledger.service;
 
-import com.loanledger.events.FraudDetectedEvent;
-import com.loanledger.events.LedgerCreatedEvent;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+    import com.loanledger.events.FraudDetectedEvent;
+    import com.loanledger.events.LedgerCreatedEvent;
+    import lombok.RequiredArgsConstructor;
+    import lombok.extern.slf4j.Slf4j;
+    import java.util.ArrayDeque;
+    import java.util.Deque;
+    import java.util.Map;
+    import java.util.concurrent.ConcurrentHashMap;
+    import org.springframework.beans.factory.annotation.Value;
+    import org.springframework.kafka.core.KafkaTemplate;
+    import org.springframework.stereotype.Service;
 
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Service;
+    @Service
+    @RequiredArgsConstructor
+    @Slf4j
+    public class FraudDetectionService {
+        @Value("${fraud.max-txn}")
+        private int MAX_TXN;
+        @Value("${fraud.window-ms}")
+        private long WINDOW_MS;
 
-@Service
-@RequiredArgsConstructor
-@Slf4j
-public class FraudDetectionService {
+        private final Map<Long, Deque<Long>> userTransactions = new ConcurrentHashMap<>();
+        
+        private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    private static final int MAX_TXN = 10;
-    private static final long WINDOW_MS = 5000;
+        public void analyzeTransaction(LedgerCreatedEvent event) {
 
-    // userId -> timestamps
-    private final Map<Long, Deque<Long>> userTransactions = new ConcurrentHashMap<>();
-    
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+            long userId = event.getUserId();
+            long now = System.currentTimeMillis();
 
-    public void analyzeTransaction(LedgerCreatedEvent event) {
+            userTransactions.putIfAbsent(userId, new ArrayDeque<>());
+            Deque<Long> timestamps = userTransactions.get(userId);
 
-        long userId = event.getUserId();
-        long now = System.currentTimeMillis();
+            synchronized (timestamps) {
 
-        userTransactions.putIfAbsent(userId, new ArrayDeque<>());
-        Deque<Long> timestamps = userTransactions.get(userId);
+                timestamps.addLast(now);
 
-        synchronized (timestamps) {
+                while (!timestamps.isEmpty() && now - timestamps.peekFirst() > WINDOW_MS) {
+                    timestamps.pollFirst();
+                }
 
-            // 1. Add current transaction
-            timestamps.addLast(now);
-
-            // 2. Remove old transactions (outside 5 sec)
-            while (!timestamps.isEmpty() && now - timestamps.peekFirst() > WINDOW_MS) {
-                timestamps.pollFirst();
+                if (timestamps.size() >= MAX_TXN) {
+                    kafkaTemplate.send("fraud-topic",
+                    new FraudDetectedEvent(userId, event.getLedgerId(),
+                    "Too many transactions in short time", event.getAmount().doubleValue()));
+                }
             }
 
-            // 3. Check threshold
-            if (timestamps.size() >= MAX_TXN) {
-                kafkaTemplate.send("fraud-topic",
-                new FraudDetectedEvent(userId, event.getLedgerId(),
-                "Too many transactions in short time", event.getAmount().doubleValue()));
-            }
+            log.info("🛡️ Fraud analysis done for Ledger ID: {}", event.getLedgerId());
+        
         }
-
-        log.info("🛡️ Fraud analysis done for Ledger ID: {}", event.getLedgerId());
-    
     }
-}
