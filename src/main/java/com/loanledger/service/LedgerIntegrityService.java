@@ -17,18 +17,16 @@ public class LedgerIntegrityService {
     private final LedgerRepository ledgerRepository;
 
     public boolean validateChain() {
-        List<LedgerEntry> entries = ledgerRepository.findAll();
+        List<LedgerEntry> entries = ledgerRepository.findAllByOrderByIdAsc();
         String expectedPreviousHash = "0";
 
         for (LedgerEntry entry : entries) {
-            // 1. Check if previous hash matches what the current entry claims
             if (!entry.getPreviousHash().equals(expectedPreviousHash)) {
                 log.error("❌ Ledger Integrity Violation! Entry {} claims previous hash {} but expected {}", 
                         entry.getId(), entry.getPreviousHash(), expectedPreviousHash);
                 return false;
             }
 
-            // 2. Re-calculate the current entry's hash and compare
             String dataToHash = entry.getPreviousHash() + entry.getUserId() + entry.getType() + entry.getAmount() + entry.getReferenceId();
             String recalculatedHash = calculateHash(dataToHash);
 

@@ -18,7 +18,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor 
 public class LoanService {
     private final LoanRepository loanRepository;
     private final LoanProductRepository loanProductRepository;

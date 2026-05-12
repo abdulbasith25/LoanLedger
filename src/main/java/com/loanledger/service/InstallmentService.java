@@ -67,7 +67,7 @@ public class InstallmentService {
         loan.setRemainingAmount(installmentAmount.multiply(BigDecimal.valueOf(tenure)));
         loanRepository.save(loan);
     }
-
+   
     private BigDecimal getScore(int score){
         if (score >= 900) 
             return new BigDecimal("0.01");

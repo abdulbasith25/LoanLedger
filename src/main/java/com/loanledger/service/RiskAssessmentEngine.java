@@ -5,7 +5,7 @@ import com.loanledger.repository.LoanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
+import com.loanledger.config.AsyncConfig;
 import jakarta.annotation.PreDestroy;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -23,14 +23,10 @@ import java.util.concurrent.TimeUnit;
 public class RiskAssessmentEngine {
 
     private final LoanRepository loanRepository;
-
-    // Core Java Multithreading! Using a highly tuned custom ThreadPoolExecutor.
-    // Core Threads: 5 (always alive, waiting for work)
-    // Max Threads: 20 (scales up to handle spikes in loan applications)
-    // KeepAlive: 60 seconds (terminates extra threads after exactly 1 minute of inactivity)
-    // Queue: ArrayBlockingQueue of 50 (buffers excess applications before spinning up extra threads)
+    private final AsyncConfig asyncConfig;
+   
     private final ExecutorService backgroundExecutor = new ThreadPoolExecutor(
-            5, 
+            10, 
             20, 
             60L, TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(50),
@@ -74,7 +70,6 @@ public class RiskAssessmentEngine {
         }, backgroundExecutor);
     }
 
-    // Best practice: gracefully shutdown thread pool when Spring Boot stops
     @PreDestroy
     public void shutdown() {
         log.info("Shutting down Risk Assessment Engine thread pool...");
