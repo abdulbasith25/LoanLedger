@@ -7,8 +7,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/loans")
 @CrossOrigin(origins = "*")
@@ -21,17 +24,20 @@ public class LoanController {
     @ApiResponse(responseCode = "200", description = "Loan application submitted successfully")
     @ApiResponse(responseCode = "400", description = "Invalid loan product or user details")
     @PostMapping("/apply")
-    public LoanDto applyForLoan(@RequestBody LoanApplyRequest request) {
-        return loanService.applyForLoan(request.getUserId(), request.getLoanProductId());
+    public ResponseEntity<LoanDto> applyForLoan(@RequestBody LoanApplyRequest request) {
+        log.info("Loan application received for user: {}", request.getUserId());
+        LoanDto loan = loanService.applyForLoan(request.getUserId(), request.getLoanProductId());
+        return ResponseEntity.ok(loan);
     }
 
     @Operation(summary = "Approve a loan", description = "Changes the status of a loan to APPROVED. Restricted to ADMIN users.")
     @ApiResponse(responseCode = "200", description = "Loan status updated successfully")
     @ApiResponse(responseCode = "404", description = "Loan ID not found")
     @PostMapping("/{id}/approve")
-    public String approveLoan(@PathVariable Long id) {
+    public ResponseEntity<String> approveLoan(@PathVariable Long id) {
+        log.info("Approving loan ID: {}", id);
         loanService.approveLoan(id);
-        return "Loan approved";
+        return ResponseEntity.ok("Loan approved");
     }
 
     @PostMapping("/{id}/disburse")
