@@ -1,5 +1,5 @@
 package com.loanledger.service;
-
+import org.springframework.beans.factory.annotation.Qualifier;
 import com.loanledger.entity.Loan;
 import com.loanledger.repository.LoanRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,19 +23,10 @@ import java.util.concurrent.TimeUnit;
 public class RiskAssessmentEngine {
 
     private final LoanRepository loanRepository;
-    private final AsyncConfig asyncConfig;
+    @Qualifier("riscExec")
+    private final ExecutorService riscExec;
    
-    private final ExecutorService backgroundExecutor = new ThreadPoolExecutor(
-            10, 
-            20, 
-            60L, TimeUnit.SECONDS,
-            new ArrayBlockingQueue<>(50),
-            new ThreadPoolExecutor.CallerRunsPolicy() // If we hit Max Threads AND Queue is full, the calling HTTP thread processes it
-    );
-
-
-
-
+  
     public void startAsyncCreditCheck(Long loanId, Long userId) {
         log.info("Dispatching asynchronous risk assessment for Loan ID: {} on thread {}", loanId, Thread.currentThread().getName());
 
@@ -67,12 +58,12 @@ public class RiskAssessmentEngine {
             } catch (Exception e) {
                 log.error("Critical failure in risk engine for loan {}: {}", loanId, e.getMessage());
             }
-        }, backgroundExecutor);
+        }, riscExec);
     }
 
     @PreDestroy
     public void shutdown() {
         log.info("Shutting down Risk Assessment Engine thread pool...");
-        backgroundExecutor.shutdown();
+        riscExec.shutdown();
     }
 }
