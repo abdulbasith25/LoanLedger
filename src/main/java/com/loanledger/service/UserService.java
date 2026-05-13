@@ -21,9 +21,10 @@ public class UserService {
         user.setScore(newScore);
     }
 
-    public Long getUserIdFromUsername(String username) {
-        return userRepository.findByUsername(username)
-                .map(User::getId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+
+    public Long getUserIdByUsername(String username){
+        User user = userRepository.findByUsername(username). orElseThrow(()-> new UserNotFoundExcpetion("User not found"));
+        Long id = user.getId();
+        return id;
     }
 }
