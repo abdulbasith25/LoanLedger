@@ -46,7 +46,11 @@ public class WalletService {
     }
 
     public BigDecimal getBalance(Long userId) {
-        return userRepository.findById(userId).map(User::getWalletBalance).orElse(BigDecimal.ZERO);
+        Optional<User> user = userRepository.findById(userId);
+        if (user.isPresent()) {
+            return user.get().getWalletBalance();
+        }
+        return BigDecimal.ZERO;
     }
 
     public UserDto createUser(String name) {
