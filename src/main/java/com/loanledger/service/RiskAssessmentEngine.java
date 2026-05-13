@@ -18,13 +18,16 @@ import java.util.concurrent.TimeUnit;
  * This runs asynchronously so it does not block the HTTP thread processing the loan application.
  */
 @Service
-@RequiredArgsConstructor
+// @RequiredArgsConstructor
 @Slf4j
 public class RiskAssessmentEngine {
 
     private final LoanRepository loanRepository;
-    @Qualifier("riscExec")
     private final ExecutorService riscExec;
+    public RiskAssessmentEngine(@Qualifier("riscExec") ExecutorService riscExec, LoanRepository loanRepository){
+        this.riscExec = riscExec;
+        this.loanRepository = loanRepository;
+    }
    
   
     public void startAsyncCreditCheck(Long loanId, Long userId) {
