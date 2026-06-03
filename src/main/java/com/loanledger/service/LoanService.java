@@ -27,7 +27,7 @@ public class LoanService {
     private final RiskAssessmentEngine riskAssessmentEngine;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
-    @Auditing(action = "LOAN_APPLICATION_SUBMITTED")
+ 
     public LoanDto applyForLoan(Long userId, Long loanProductId) {
         LoanProduct product = loanProductRepository.findById(loanProductId).orElseThrow(() -> new ResourceNotFoundException("Loan Product not found"));
         Loan loan = new Loan();
