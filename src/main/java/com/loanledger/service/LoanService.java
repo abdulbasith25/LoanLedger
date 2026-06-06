@@ -30,7 +30,7 @@ public class LoanService {
     @Value("${foreclosurefee}")
     private BigDecimal foreclosurefee;
 
-    @Auditing(action = "LOAN_APPLICATION_SUBMITTED")
+ 
     public LoanDto applyForLoan(Long userId, Long loanProductId) {
         LoanProduct product = loanProductRepository.findById(loanProductId).orElseThrow(() -> new ResourceNotFoundException("Loan Product not found"));
         Loan loan = new Loan();

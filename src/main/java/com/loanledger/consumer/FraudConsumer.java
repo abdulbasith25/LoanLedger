@@ -29,6 +29,7 @@ public class FraudConsumer {
 
             log.info("🔔 Triggering FCM Notification for User ID: {}", user.getId());
             notificationService.sendPushNotification(user.getNotificationToken(), title, body);
+            mailService. sendMail(title, body, user. getId());
         });
     }
 }
