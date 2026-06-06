@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 
 import java.util.Optional;
 
+
 @Service
 @RequiredArgsConstructor 
 public class LoanService {
@@ -26,6 +27,8 @@ public class LoanService {
     private final InstallmentService installmentService;
     private final RiskAssessmentEngine riskAssessmentEngine;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    @Value("${foreclosurefee}")
+    private BigDecimal foreclosurefee;
 
     @Auditing(action = "LOAN_APPLICATION_SUBMITTED")
     public LoanDto applyForLoan(Long userId, Long loanProductId) {
@@ -78,7 +81,6 @@ public class LoanService {
         );
         
         kafkaTemplate.send("disbursal-topic", event);
-        // Work will be finished by DisbursalConsumer
     }
 
     public LoanDto getLoan(Long id) {
@@ -96,7 +98,7 @@ public class LoanService {
 
         // Logic: Pay only the remaining PRINCIPAL + a 2% foreclosure fee
         BigDecimal outstandingPrincipal = loan.getPrincipalAmount();
-        BigDecimal foreclosureFee = outstandingPrincipal.multiply(new BigDecimal("0.02")).setScale(2, BigDecimal.ROUND_HALF_UP);
+        BigDecimal foreclosureFee = outstandingPrincipal.multiply(foreclosurefee).setScale(2, BigDecimal.ROUND_HALF_UP);
         BigDecimal totalForeclosureAmount = outstandingPrincipal.add(foreclosureFee);
 
         // 1. Debit the wallet
