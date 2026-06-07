@@ -14,6 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.kafka.core.KafkaTemplate;
 import java.math.BigDecimal;
+import org.springframework.beans.factory.annotation.Value;
+import com.loanledger.service.pipeline.LoanValidationPipeline;
+import com.loanledger.service.pipeline.LoanValidationContext;
 
 import java.util.Optional;
 
@@ -27,12 +30,14 @@ public class LoanService {
     private final InstallmentService installmentService;
     private final RiskAssessmentEngine riskAssessmentEngine;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final LoanValidationPipeline loanValidationPipeline;
     @Value("${foreclosurefee}")
     private BigDecimal foreclosurefee;
 
  
     public LoanDto applyForLoan(Long userId, Long loanProductId) {
-        LoanProduct product = loanProductRepository.findById(loanProductId).orElseThrow(() -> new ResourceNotFoundException("Loan Product not found"));
+        LoanValidationContext context = loanValidationPipeline.validate(userId, loanProductId);
+        LoanProduct product = context.getLoanProduct();
         Loan loan = new Loan();
         loan.setUserId(userId);
         loan.setLoanProductId(loanProductId);
