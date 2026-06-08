@@ -60,6 +60,19 @@ public class FinancialToolkitService {
         return csv.toString();
     }
 
+    /**
+     * Helper method demonstrating the try-with-resources statement.
+     * FileWriter is an AutoCloseable resource that will be automatically closed.
+     */
+    public void exportLedgerToCsvFile(List<com.loanledger.dto.LedgerEntryDto> entries, java.io.File file) {
+        String csvContent = generateLedgerCsv(entries);
+        try (java.io.FileWriter writer = new java.io.FileWriter(file)) {
+            writer.write(csvContent);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Failed to export ledger to CSV", e);
+        }
+    }
+
     private LoanSimulationResult calculateSimulation(BigDecimal principal, BigDecimal annualRate, int tenure) {
         BigDecimal monthlyRate = annualRate.divide(BigDecimal.valueOf(12), 10, RoundingMode.HALF_UP);
         BigDecimal emi = calculateEmi(principal, annualRate, tenure);
