@@ -60,10 +60,7 @@ public class FinancialToolkitService {
         return csv.toString();
     }
 
-    /**
-     * Helper method demonstrating the try-with-resources statement.
-     * FileWriter is an AutoCloseable resource that will be automatically closed.
-     */
+   
     public void exportLedgerToCsvFile(List<com.loanledger.dto.LedgerEntryDto> entries, java.io.File file) {
         String csvContent = generateLedgerCsv(entries);
         try (java.io.FileWriter writer = new java.io.FileWriter(file)) {
